@@ -4,7 +4,10 @@ import android.content.DialogInterface
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
+import android.view.View
 import androidx.appcompat.app.AlertDialog
+import com.google.firebase.iid.FirebaseInstanceId
 import kotlinx.android.synthetic.main.activity_main.*
 import kr.co.tjoeun.daily10minutes_20200927.adapters.ProjectAdapter
 import kr.co.tjoeun.daily10minutes_20200927.datas.Project
@@ -23,6 +26,10 @@ class MainActivity : BaseActivity() {
         setContentView(R.layout.activity_main)
         setupEvents()
         setValues()
+
+//        FCM 서버에 등록된 기기토큰값 확인
+        Log.d("디바이스토큰", FirebaseInstanceId.getInstance().token!!)
+
     }
 
     override fun setupEvents() {
@@ -68,6 +75,40 @@ class MainActivity : BaseActivity() {
 
         mAdapter = ProjectAdapter(mContext, R.layout.project_list_item, mProjectList)
         projectListView.adapter = mAdapter
+
+//        노티 아이콘 보여야함
+        notiImg.visibility = View.VISIBLE
+        getNotiCountFromServer()
+
+    }
+
+//    서버에서 안읽은 알림이 몇개인지 가져오는 기능
+
+    fun getNotiCountFromServer() {
+
+        ServerUtil.getRequestNotiCount(mContext, object : ServerUtil.JsonResponseHandler {
+
+            override fun onResponse(json: JSONObject) {
+
+                val dataObj = json.getJSONObject("data")
+                val notiCount = dataObj.getInt("unread_noti_count")
+
+//                알림 0개 : 빨간 점 숨김
+//                하나라도 있다 : 보여주기 + 갯수 반영
+
+                runOnUiThread {
+                    if (notiCount == 0) {
+                        notiCountTxt.visibility = View.GONE
+                    }
+                    else {
+                        notiCountTxt.visibility = View.VISIBLE
+                        notiCountTxt.text = notiCount.toString()
+                    }
+                }
+
+            }
+
+        })
 
     }
 
